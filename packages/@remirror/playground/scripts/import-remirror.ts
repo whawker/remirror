@@ -1,30 +1,47 @@
-import chalk from 'chalk';
 import { promises as fsp } from 'fs';
-import { resolve } from 'path';
-import * as prettier from 'prettier';
+import { resolve, join } from 'path';
+import { format, resolveConfig } from 'prettier';
+import { Logger } from 'tslog';
 
-/* We need to fake a browser environment */
+const { writeFile, readdir } = fsp;
+
+// Create the logger which is used for the purpose of debugging.
+const log = new Logger({ name: 'playground:imports' });
+log.info('Starting the playground:imports script.');
+
 // @ts-ignore
+// This is needed to fake a browser environment.
 global.WebSocket = class {};
 
-console.log(chalk`{grey Updating playground imports... }\n`);
+/**
+ * Resolve the provided path relative to the base directory of this project.
+ */
+function baseDir(...paths: string[]) {
+  return resolve(__dirname, '../../../', ...paths);
+}
 
+/**
+ * Check the imports in order to obtain the
+ */
 async function scanImportsFrom<T extends RemirrorModuleMeta>(
-  sourceDir: string,
+  sourceFolder: string,
   sourceModulePath: string,
   callback: (meta: RemirrorModuleMeta) => Promise<T>,
 ): Promise<{ [key: string]: T }> {
   const result: { [key: string]: T } = {};
-  const folders = await fsp.readdir(sourceDir);
+  const folders = await readdir(sourceFolder);
 
+  // Loop through the folders and extra the required data.
   for (const folder of folders) {
-    const path = `${sourceDir}/${folder}`;
+    const path = join(sourceFolder, folder);
     const packageJson = require(`${path}/package.json`);
     const mainPath = resolve(path, packageJson.main);
-    const mod = require(mainPath);
+
+    const mainExport = require(mainPath);
+
     const meta: RemirrorModuleMeta = {
       name: `${sourceModulePath}/${folder}`,
-      exports: Object.keys(mod),
+      exports: Object.keys(mainExport),
     };
 
     result[folder] = await callback(meta);
@@ -33,6 +50,10 @@ async function scanImportsFrom<T extends RemirrorModuleMeta>(
   return result;
 }
 
+/**
+ * Import the extension. This is a separate function to allow for future changes
+ * in the API.
+ */
 async function importExtension(meta: RemirrorModuleMeta) {
   return meta;
 }
@@ -42,7 +63,14 @@ async function importPreset(meta: RemirrorModuleMeta) {
 }
 
 interface RemirrorModuleMeta {
+  /**
+   * The name of the module which will be used for the `package.json`.
+   */
   name: string;
+
+  /**
+   * The exports from the module.
+   */
   exports: string[];
 }
 
@@ -55,7 +83,10 @@ interface Everything {
   presets: RemirrorModuleMap;
 }
 
-function template({ extensions, presets }: Everything) {
+/**
+ * This generates the file in order to be worked with.
+ */
+function generateCode({ extensions, presets }: Everything) {
   // import * as remirrorCore from 'remirror/core';
   // 'remirror/core': remirrorCore,
 
@@ -68,21 +99,20 @@ function template({ extensions, presets }: Everything) {
   });
 
   return `\
-/******************************************************************************\\
-*                                                                              *
-*                       THIS FILE IS AUTO-GENERATED                            *
-*                                                                              *
-*           See @remirror/playground/scripts/import-remirror.ts.               *
-*                                                                              *
-\\******************************************************************************/
+/**
+ * @module
+ *
+ * DO NOT EDIT: AUTO-GENERATED FILE
+ * @see \`@remirror/playground/scripts/import-remirror.ts\`
+ */
 
 import { useRemirrorPlayground } from './use-remirror-playground';
 
 export const IMPORT_CACHE: { [moduleName: string]: any } = {
-  // Auto-imported
+  // Automatically imported modules made available to the cache.
   ${imports.join(',\n  ')},
 
-  // Manually -imported
+  // The following files are manually imported
   remirror: require('remirror'),
   'remirror/core': require('remirror/core'),
   'remirror/react': require('remirror/react'),
@@ -128,49 +158,53 @@ export const INTERNAL_MODULES: Array<{ moduleName: string, exports: string[] }> 
 
 function forceTermination() {
   const timeout = global.setTimeout(() => {
-    console.log(
-      chalk`{yellow Look, I'm just a script, and far be it for me to tell you your job, dear human, but it seems to me that something has been keeping me alive for the last 5,000,000 nanoseconds (which feels like an eternity to me) since I completed my task. Maybe something opened a network connection? Who knows. Either way, it doesn't seem right, so I'm going to go ahead and exit. }`,
+    log.error(
+      "I'm just a script, and far be it for me to tell you your job, dear human, but it seems to me that something has been keeping me alive for the last 5,000,000 nanoseconds (which feels like an eternity to me) since I completed my task. Maybe something opened a network connection? Who knows. Either way, it doesn't seem right, so I'm going to go ahead and exit",
     );
     process.exit(0);
   }, 5000);
 
   timeout.unref();
-  console.log(chalk`{green Successfully created playground imports}\n`);
+  log.info('Success!');
 }
 
+// The extension and preset folders for the top level exports.
+const extensionFolder = baseDir('remirror', 'extension');
+const presetFolder = baseDir('remirror', 'extension');
+
+// Where the generated file will be located.
+const outputFilePath = baseDir('@remirror', 'playground', 'src', '_remirror.tsx');
+
+/**
+ * This is the function run when the script is called, as is convention in other
+ * languages.
+ */
 async function main() {
   // TODO: rewrite this to walk everything inside `packages/remirror`; ignore
   // `dist` and `src; populate `execute.ts`'s `knownRequires` and handle the
   // TypeScript definitions.
-  const extensions = await scanImportsFrom(
-    `${__dirname}/../../../remirror/extension`,
-    'remirror/extension',
-    importExtension,
-  );
-  const presets = await scanImportsFrom(
-    `${__dirname}/../../../remirror/preset`,
-    'remirror/preset',
-    importPreset,
-  );
-  const everything: Everything = {
-    extensions,
-    presets,
-  };
-  const code = template(everything);
-  // TODO: prettier
-  const filepath = `${__dirname}/../src/_remirror.tsx`;
-  await fsp.writeFile(
-    filepath,
-    prettier.format(code, {
-      filepath,
-      parser: 'typescript',
-      ...(await prettier.resolveConfig(filepath)),
-    }),
-  );
+  const extensions = await scanImportsFrom(extensionFolder, 'remirror/extension', importExtension);
+  const presets = await scanImportsFrom(presetFolder, 'remirror/preset', importPreset);
+  const everything: Everything = { extensions, presets };
+
+  // Generate the code and format it with prettier.
+  const generatedCode = generateCode(everything);
+  const prettierConfig = await resolveConfig(outputFilePath);
+  const formattedCode = format(generatedCode, {
+    filepath: outputFilePath,
+    parser: 'typescript',
+    ...prettierConfig,
+  });
+
+  // Write to the formatted code to the output path for consumption by the rest
+  // of the playground.
+  await writeFile(outputFilePath, formattedCode);
+
   forceTermination();
 }
 
+// Run the script but listen for errors.
 main().catch((error) => {
-  console.error(error);
+  log.fatal(error);
   process.exit(1);
 });

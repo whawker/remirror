@@ -829,6 +829,7 @@ importers:
       prettier: 2.0.5
       react: 16.13.1
       react-dom: 16.13.1_react@16.13.1
+      tslog: 2.7.1
     specifiers:
       '@babel/runtime': ^7.11.0
       '@babel/standalone': ^7.11.0
@@ -852,6 +853,7 @@ importers:
       react-dom: ^16.13.1
       regenerator-runtime: ^0.13.7
       remirror: 1.0.0-next.26
+      tslog: ^2.7.1
   packages/@remirror/pm:
     dependencies:
       '@babel/runtime': 7.11.2
@@ -25452,6 +25454,14 @@ packages:
     dev: false
     resolution:
       integrity: sha512-SgIkNheinmEBgx1IUNirK0TUD4X9yjjBRTqqjggWCU3pUEqIk3/Uwl3yRixYKT6WjQuGiwDv4NomL3wqRCj+CQ==
+  /tslog/2.7.1:
+    dependencies:
+      source-map-support: 0.5.19
+    dev: true
+    engines:
+      node: '>=10'
+    resolution:
+      integrity: sha512-2Oe5ttlp1v6xebIQGJ7Vyuf1xFlms+dL9QATSOx0HzBO5dwxVvk8fJmYI0bTBJ+nXoP2Sk3mMF+DNjoEib952Q==
   /tsutils/3.17.1_typescript@4.0.2:
     dependencies:
       tslib: 1.13.0
