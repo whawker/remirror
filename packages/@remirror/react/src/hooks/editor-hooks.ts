@@ -351,7 +351,8 @@ interface UsePresetCallbackParameter<Type extends AnyPresetConstructor> {
   addCustomHandler: CustomHandlerMethod<OptionsOfConstructor<Type>>;
 
   /**
-   * An instance of the preset. This should only be needed in advanced situations.
+   * An instance of the preset. This should only be needed in advanced
+   * situations.
    */
   preset: InstanceType<Type>;
 }
@@ -365,11 +366,11 @@ type UsePresetCallback<Type extends AnyPresetConstructor> = (
  *
  * @remarks
  *
- * The manager is a singleton and doesn't rerender until `manager.destroy()` is called.
- * You should call this method in a `useEffect`
+ * The manager is a singleton and doesn't rerender until `manager.destroy()` is
+ * called. You should call this method in a `useEffect`
  *
- * This is intentional. However, it's something that can be addressed
- * if it causes issues.
+ * This is intentional. However, it's something that can be addressed if it
+ * causes issues.
  *
  * ```tsx
  * import { useExtension } from '@remirror/react';

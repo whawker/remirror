@@ -331,7 +331,11 @@ module.exports = {
       },
     },
     {
-      files: ['support/scripts/**', 'support/e2e/**', 'packages/@remirror/playground/scripts/**'],
+      files: [
+        'support/scripts/**/*.js',
+        'support/e2e/**/*.{js,ts}',
+        'packages/@remirror/playground/scripts/import-remirror.ts',
+      ],
       rules: {
         '@typescript-eslint/ban-ts-comment': 'off',
         'unicorn/no-process-exit': 'off',
@@ -348,7 +352,7 @@ module.exports = {
       },
     },
     {
-      files: ['packages/@remirror/playground/**', 'support/e2e/**'],
+      files: ['packages/@remirror/playground/**', 'support/e2e/**/*.{js,ts}'],
       rules: { '@typescript-eslint/no-var-requires': 'off' },
     },
     {

@@ -1,18 +1,17 @@
 import * as crypto from 'crypto';
-import { languages } from 'monaco-editor';
+import { editor, languages } from 'monaco-editor';
 import React, { FC, useContext, useEffect, useRef } from 'react';
 import { render, unmountComponentAtNode } from 'react-dom';
 
-// addImport('@remirror/react', 'RemirrorProvider');
-// addImport('@remirror/react', 'useManager');
-// addImport('@remirror/react', 'useExtension');
-import { IMPORT_CACHE, INTERNAL_MODULES } from './_remirror';
+import { entries } from 'remirror/core';
+
+import { darkTheme } from './config/editor-themes';
 import { PlaygroundContext, PlaygroundContextObject } from './context';
-// import * as remirrorCoreExtensions from '@remirror/core-extensions';
-//import * as remirrorReact from '@remirror/react';
-//import * as remirror from 'remirror';
 import { ErrorBoundary } from './error-boundary';
-import { acquiredTypeDefs, dtsCache } from './vendor/type-acquisition';
+import { DTS_CACHE, TYPE_DEFINITION_MAP } from './generated/exports';
+import { IMPORT_CACHE, INTERNAL_MODULES } from './generated/modules';
+import { getEditorFilePath } from './playground-utils';
+import { acquiredTypeDefinitions, dtsCache } from './vendor/type-acquisition';
 
 // Start with these and cannot remove them
 export const REQUIRED_MODULES = INTERNAL_MODULES.map((mod) => mod.moduleName);
@@ -23,52 +22,131 @@ const tsOptions: languages.typescript.CompilerOptions = {
   jsx: languages.typescript.JsxEmit.React,
   esModuleInterop: true,
   allowSyntheticDefaultImports: true,
+  allowJs: true,
+  strict: true,
+  noImplicitAny: true,
+  strictNullChecks: true,
+  strictFunctionTypes: true,
+  strictPropertyInitialization: true,
+  strictBindCallApply: true,
+  noImplicitThis: true,
+  noImplicitReturns: true,
+  useDefineForClassFields: false,
+  alwaysStrict: true,
+  allowUnreachableCode: false,
+  allowUnusedLabels: false,
+  downlevelIteration: false,
+  noEmitHelpers: false,
+  noLib: false,
+  noStrictGenericChecks: false,
+  noUnusedLocals: false,
+  noUnusedParameters: false,
+  preserveConstEnums: false,
+  removeComments: false,
+  skipLibCheck: false,
+  declaration: true,
+  experimentalDecorators: true,
+  emitDecoratorMetadata: true,
+  moduleResolution: languages.typescript.ModuleResolutionKind.NodeJs,
+  target: languages.typescript.ScriptTarget.ESNext,
+  module: languages.typescript.ModuleKind.ESNext,
 };
 
 languages.typescript.typescriptDefaults.setCompilerOptions(tsOptions);
 languages.typescript.javascriptDefaults.setCompilerOptions(tsOptions);
 
-// const remirrorCore = { DocExtension, TextExtension, ParagraphExtension };
-export const addLibraryToRuntime = (code: string, path: string) => {
+editor.defineTheme(...darkTheme);
+
+/**
+ * This method is used to add types to the monaco editor runtime.
+ */
+export function addLibraryToRuntime(code: string, path: string) {
   languages.typescript.typescriptDefaults.addExtraLib(code, path);
-};
-
-/*
-
-## IMPORTANT! ##
-
-For every module added here, you must provided `acquiredTypeDefs` below,
-otherwise it will fetch out-of-sync typedefs from npm
-
-*/
-
-REQUIRED_MODULES.forEach((moduleName) => {
-  acquiredTypeDefs[moduleName] = {
-    types: {
-      ts: 'included',
-    },
-  };
-  // This is a really bad hack, really there should just be one `package.json`
-  // at the root of the module.
-  acquiredTypeDefs[`node_modules/${moduleName}/package.json`] = JSON.stringify({
-    // This should be the package.json
-    name: moduleName,
-    types: 'index.d.ts',
-  });
-  dtsCache[moduleName] = {
-    'index.d.ts': `
-declare module "${moduleName}" {
-  const foo: any;
-  export default foo;
+  // languages.typescript.typescriptDefaults.addExtraLib(code,
+  // path.replace('node_modules/', ''));
 }
-`,
-  };
+
+const MATCHING_REGEX = /^@remirror\/(?:core|react|preset|extension)/;
+
+/**
+ * Add the `.d.ts` files for each package to the editor.
+ */
+function addDtsFiles(packageName: string, dtsFileContents: Record<string, string>) {
+  // Loop through the dts paths and the dts contents of each endpoitn for this
+  // package.
+  for (const [relativePath, contents] of entries(dtsFileContents)) {
+    // Add the pre compiled `.d.ts` file to the `node_modules` file system for
+    // the monaco editor.
+    addLibraryToRuntime(contents, getEditorFilePath({ packageName, relativePath, isDts: false }));
+  }
+
+  // Since all remirror packages have a certain pattern it is possible to know
+  // if a package is included based the regex defined earlier.
+  const isIncludedWithRemirror = MATCHING_REGEX.test(packageName);
+
+  // When the package name is not included with remirror as a subdirectory
+  // subdirectory of `remirror` then we can add it as it is.
+  if (!isIncludedWithRemirror) {
+    return;
+  }
+
+  // At this point we know the package is also exported as a subdirectory of
+  // `remirror`. As a result we need to:
+  // - Create the subdirectory name from the scoped name.
+  // - Create contents for the subdirectory which point to the scoped name.
+  // - Add both the scoped package name and subdirectory name to the monaco
+  //   editor.
+
+  // Get the end segment of the scoped name `@remirror/core-utils` =>
+  // `core-utils`
+  const [, endSegment] = packageName.split('/');
+
+  // Convert the filename to a sub directory path which appends the
+  // `index.d.ts` to make it the default entry point.
+  const relativePath = `${endSegment.split('-').join('/')}/index.d.ts`;
+
+  // Point the contents of the sub directory `remirror` import to the original
+  // scoped package. e.g. `remirror/core/utils` would have a value of `export *
+  // from '@remirror/core-utils';`
+  const updatedContents = `export * from '${packageName}';`;
+
+  // Add the subdirectory and it's contents to the monaco editor.
   addLibraryToRuntime(
-    acquiredTypeDefs[`node_modules/${moduleName}/package.json`] as any,
-    `node_modules/${moduleName}/package.json`,
+    updatedContents,
+    getEditorFilePath({
+      packageName: 'remirror',
+      relativePath,
+      isDts: false,
+    }),
   );
-  addLibraryToRuntime(dtsCache[moduleName]['index.d.ts'], `node_modules/${moduleName}/index.d.ts`);
-});
+}
+
+/**
+ * The function that is run when the editor is first created in order to
+ * populate the editor types.
+ */
+export function populateEditorTypes() {
+  // Loop through the prepared DTS_CACHE and add it to the list of cached
+  // modules.
+  for (const [packageName, dtsFileContents] of entries(DTS_CACHE)) {
+    dtsCache[packageName] = dtsFileContents;
+    addDtsFiles(packageName, dtsFileContents);
+  }
+
+  // Keeping this here for neatness rather than add it for every package.
+  const relativePath = 'package.json';
+
+  // Loop through the prepared TYPE_DEFINITION_MAP and add to the list of cached
+  // modules.
+  for (const [packageName, { packageJson, id }] of entries(TYPE_DEFINITION_MAP)) {
+    // The type acquisition script requires a special module id and this is
+    // added so that we don't retrieve types  so that it doesn't run again.
+    acquiredTypeDefinitions[id] = packageJson;
+
+    // Add the stringified package.json file to the files in node modules.
+    addLibraryToRuntime(packageName, getEditorFilePath({ packageName, relativePath }));
+  }
+}
 
 const fetchedModules: {
   [id: string]: {
@@ -89,7 +167,8 @@ function bundle(moduleName: string, id: string): Promise<any> {
       resolve((window as any)[id]);
     });
     el.addEventListener('error', (_event) => {
-      // We cannot really get details from the event because browsers prevent that for security reasons.
+      // We cannot really get details from the event because browsers prevent
+      // that for security reasons.
       reject(new Error(`Failed to load ${el.src}`));
     });
     el.src = `http://bundle.run/${encodeURIComponent(moduleName)}@latest?name=${encodeURIComponent(
@@ -146,6 +225,7 @@ function runCode(code: string, requireFn: (mod: string) => any) {
     userModule,
     userModule.exports,
   );
+
   return userModule;
 }
 
@@ -158,6 +238,7 @@ function runCodeInDiv(
   }: { code: string; requires: string[]; playground: PlaygroundContextObject },
 ) {
   let active = true;
+
   (async function doIt() {
     try {
       // First do the requires.

@@ -1,7 +1,7 @@
 import { editor, Uri } from 'monaco-editor';
 import React, { FC, useEffect, useMemo, useRef } from 'react';
 
-import { addLibraryToRuntime } from './execute';
+import { addLibraryToRuntime, populateEditorTypes } from './execute';
 import { detectNewImportsToAcquireTypeFor } from './vendor/type-acquisition';
 
 interface CodeEditorProps {
@@ -10,11 +10,13 @@ interface CodeEditorProps {
   onChange: (newValue: string) => void;
 }
 
+populateEditorTypes();
+
 const CodeEditor: FC<CodeEditorProps> = function (props) {
   const { value, onChange, readOnly } = props;
   const ref = useRef<HTMLDivElement | null>(null);
   const model = useMemo(
-    () => editor.createModel('', 'typescript', Uri.parse('file:///usercode.tsx')),
+    () => editor.createModel('', 'typescript', Uri.parse('file:///playground.tsx')),
     [],
   );
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);

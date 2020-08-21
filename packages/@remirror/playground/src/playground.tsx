@@ -98,13 +98,15 @@ export const Playground: FC = () => {
   const removeModule = useCallback((moduleName: string) => {
     setModules(({ [moduleName]: _moduleToDelete, ...remainingModules }) => remainingModules);
   }, []);
+
   useEffect(() => {
     for (const requiredModule of REQUIRED_MODULES) {
       if (!modules[requiredModule]) {
         addModule(requiredModule);
       }
     }
-  });
+  }, [addModule, modules]);
+
   const [options, setOptions] = useState({
     extensions: [
       // {
@@ -164,8 +166,6 @@ export const Playground: FC = () => {
 
   const setPlaygroundState = useCallback(
     (state) => {
-      console.log('Restoring state');
-      console.dir(state);
       assert(typeof state === 'object' && state, 'Expected state to be an object');
       assert(typeof state.m === 'number', 'Expected mode to be a number');
 
