@@ -4,9 +4,9 @@
   "editor.rulers": [80, 100],
   "editor.insertSpaces": true,
   "editor.defaultFormatter": "esbenp.prettier-vscode",
-  "editor.formatOnSave": false,
+  "editor.formatOnSave": true,
   "editor.codeActionsOnSave": {
-    "source.fixAll.eslint": false
+    "source.fixAll.eslint": true
   },
 
   // Files
@@ -32,6 +32,6 @@
   "eslint.validate": ["javascript", "typescript", "typescriptreact"],
   "eslint.codeActionsOnSave.mode": "problems",
 
-  // Node Project
+  // Deno
   "deno.enable": false,
 }

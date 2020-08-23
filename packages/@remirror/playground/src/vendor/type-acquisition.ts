@@ -14,14 +14,10 @@ import { compressToUTF16, decompressFromUTF16 } from 'lz-string';
 
 import {
   createModuleReferenceId,
-  log as ns,
   mapModuleNameToModule,
   mapRelativePath,
   parseFileForModuleReferences,
 } from '../playground-utils';
-
-const log = ns.namespace('types');
-const logError = ns.namespace('types:error');
 
 /**
  * The type definitions that can be used for this file. Null is the value when a
@@ -87,7 +83,7 @@ function packageJsonUrl(name: string) {
  * Log an error to the console.
  */
 const errorMessage = (msg: string, response: any) => {
-  logError(
+  console.error(
     `${msg} - will not try again in this session`,
     response.status,
     response.statusText,
@@ -151,11 +147,15 @@ async function getModuleAndRootDefTypePath(packageName: string, config: ATAConfi
   }
 
   if (!responseJSON.types) {
-    return log(`There were no types for '${packageName}' - will not try again in this session`);
+    return console.log(
+      `There were no types for '${packageName}' - will not try again in this session`,
+    );
   }
 
   if (!responseJSON.types.ts) {
-    return log(`There were no types for '${packageName}' - will not try again in this session`);
+    return console.log(
+      `There were no types for '${packageName}' - will not try again in this session`,
+    );
   }
 
   acquiredTypeDefinitions[packageName] = responseJSON;
@@ -227,7 +227,7 @@ async function getCachedDTSString(config: ATAConfig, url: string) {
       return decompressFromUTF16(text);
     }
 
-    log('Skipping cache for', url);
+    console.log('Skipping cache for', url);
   }
 
   const response = await config.fetcher(url);
@@ -343,7 +343,7 @@ async function getDependenciesForModule(
   getReferenceDependencies(sourceCode, moduleName ?? '', path, config);
 
   Promise.all(promises).catch((error) => {
-    logError(error);
+    console.log(error);
   });
 }
 
@@ -372,7 +372,7 @@ function getModuleDtsCreator(
     const moduleToDownload = mapModuleNameToModule(name);
 
     if (!moduleName && moduleToDownload.startsWith('.')) {
-      return log("[ATA] Can't resolve relative dependencies from the playground root");
+      return console.log("[ATA] Can't resolve relative dependencies from the playground root");
     }
 
     const moduleID = createModuleReferenceId({
@@ -387,7 +387,7 @@ function getModuleDtsCreator(
       return;
     }
 
-    log(`[ATA] Looking at ${moduleToDownload}`);
+    console.log(`[ATA] Looking at ${moduleToDownload}`);
 
     // This module is scoped with no nested imports.
     const moduleIsScopedOnly =

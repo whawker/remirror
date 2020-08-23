@@ -1,5 +1,3 @@
-import debug from 'debug';
-
 import { findMatches } from '@remirror/core-helpers';
 
 interface GetMonacoFileName {
@@ -17,25 +15,6 @@ interface GetMonacoFileName {
 export function getEditorFilePath({ packageName, relativePath, isDts }: GetMonacoFileName) {
   return `file:///node_modules/${isDts ? '@types/' : ''}${packageName}/${relativePath}`;
 }
-
-const logger = debug('remirror:playground');
-
-/**
- * Log using the debug util. Logs can be turned on and off with local storage.
- */
-export function log(msg: unknown, ...content: unknown[]) {
-  return logger(msg, ...content);
-}
-
-function createNamespace(namespace: string) {
-  const logger = debug(`remirror:playground:${namespace}`);
-
-  return (msg: unknown, ...content: unknown[]) => {
-    logger(msg, ...content);
-  };
-}
-
-log.namespace = createNamespace;
 
 /**
  * Grab any import/requires from inside the code and make a list of its
@@ -251,3 +230,83 @@ export function isExtensionName(exportName: string) {
 export function isPresetName(exportName: string) {
   return exportName.endsWith('Preset') && /^[A-Z]/.test(exportName);
 }
+
+interface LoadScriptOptions {
+  /**
+   * An optional check which should be passed to customise when a script is
+   * actually loaded. It defaults to return true straight away.
+   *
+   * The intention is that when loading scripts like babel you should be able to
+   * check if the babel object is available on the window yet and return true
+   * when it is, and the promises will resolve.
+   */
+  hasLoaded?: () => boolean;
+
+  /**
+   * The checking interval time in milliseconds.
+   *
+   * @default 100
+   */
+  timeout?: number;
+
+  /**
+   * The number of checks allowed before giving up.
+   *
+   * @default 100
+   */
+  maximumChecks?: number;
+}
+
+// Defaults used for the `loadScript` method.
+const DEFAULT_MAX_CHECKS = 100;
+const DEFAULT_TIMEOUT = 100;
+
+/**
+ * A utility method for loading a script with a checker method.
+ *
+ * - The script should only be loaded once in the session.
+ * - The promise should resolve only when the check has successfully passed.
+ */
+export async function loadScript(src: string, options: LoadScriptOptions = {}) {
+  const {
+    hasLoaded = () => true,
+    maximumChecks = DEFAULT_MAX_CHECKS,
+    timeout = DEFAULT_TIMEOUT,
+  } = options;
+  // Set up the maximum checks before giving up.
+
+  return new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.setAttribute('src', src);
+    document.body.append(script);
+    let checks = 0;
+
+    function onLoad() {
+      const interval = setInterval(() => {
+        if (checks >= maximumChecks) {
+          reject();
+        }
+
+        checks++;
+
+        if (!hasLoaded()) {
+          return;
+        }
+
+        clearInterval(interval);
+        resolve();
+      }, timeout);
+    }
+
+    // Add event listeners which are triggered once only.
+    script.addEventListener('load', onLoad, { once: true });
+    script.addEventListener('error', reject, { once: true });
+  });
+}
+
+/**
+ * A method which converts the TypeScript output to JavaScript without losing readability.
+ *
+ * As seen here: https://stackoverflow.com/a/62382812/2172153
+ */
+export function convertTypeScriptToJavaScript() {}
