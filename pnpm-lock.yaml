@@ -810,6 +810,7 @@ importers:
       '@babel/standalone': 7.11.4
       '@babel/types': 7.11.0
       '@emotion/core': 10.0.35_react@16.13.1
+      '@emotion/styled': 10.0.27_4d699cf7e8a2bf97a506a18e2a399a54
       '@remirror/core': 'link:../core'
       '@remirror/core-helpers': 'link:../core-helpers'
       '@remirror/pm': 'link:../pm'
@@ -825,6 +826,7 @@ importers:
       react-monaco-editor: 0.39.1_react@16.13.1
       regenerator-runtime: 0.13.7
       remirror: 'link:../../remirror'
+      use-clipboard-copy: 0.1.2_react@16.13.1
       zustand: 3.0.1_react@16.13.1
     devDependencies:
       '@types/prettier': 2.0.2
@@ -839,6 +841,7 @@ importers:
       '@babel/standalone': ^7.11.0
       '@babel/types': ^7.11.0
       '@emotion/core': ^10.0.35
+      '@emotion/styled': ^10.0.27
       '@remirror/core': 1.0.0-next.26
       '@remirror/core-helpers': 1.0.0-next.26
       '@remirror/pm': 1.0.0-next.26
@@ -861,6 +864,7 @@ importers:
       react-monaco-editor: ^0.39.1
       regenerator-runtime: ^0.13.7
       remirror: 1.0.0-next.26
+      use-clipboard-copy: ^0.1.2
       zustand: ^3.0.1
   packages/@remirror/pm:
     dependencies:
@@ -1884,6 +1888,8 @@ importers:
       '@docusaurus/plugin-ideal-image': 2.0.0-alpha.61_025a3282e79452d930c7339302b4d555
       '@docusaurus/preset-classic': 2.0.0-alpha.61_025a3282e79452d930c7339302b4d555
       '@docusaurus/theme-live-codeblock': 2.0.0-alpha.61_025a3282e79452d930c7339302b4d555
+      '@emotion/core': 10.0.35_react@16.13.1
+      '@emotion/styled': 10.0.27_4d699cf7e8a2bf97a506a18e2a399a54
       '@mdx-js/react': 1.6.16_react@16.13.1
       '@remirror/dev': 'link:../../packages/@remirror/dev'
       '@remirror/playground': 'link:../../packages/@remirror/playground'
@@ -1913,6 +1919,8 @@ importers:
       '@docusaurus/preset-classic': 2.0.0-alpha.61
       '@docusaurus/theme-live-codeblock': 2.0.0-alpha.61
       '@docusaurus/types': 2.0.0-alpha.61
+      '@emotion/core': ^10.0.35
+      '@emotion/styled': ^10.0.27
       '@mdx-js/react': ^1.6.16
       '@remirror/dev': 1.0.0-next.26
       '@remirror/playground': 1.0.0-next.26
@@ -9983,6 +9991,10 @@ packages:
     dev: false
     resolution:
       integrity: sha512-KjyCBz8xplftHjIK/nOqq/9b3hPlXbAAo/AxoITrO4yySpQ6a9QSJDAfOx9PfcRUHteeqbdNxZKSPfeFqQ7plg==
+  /clipboard-copy/3.1.0:
+    dev: false
+    resolution:
+      integrity: sha512-Xsu1NddBXB89IUauda5BIq3Zq73UWkjkaQlPQbLNvNsd5WBMnTWPNKYR6HGaySOxGYZ+BKxP2E9X4ElnI3yiPA==
   /clipboard/2.0.6:
     dependencies:
       good-listener: 1.2.2
@@ -16930,6 +16942,7 @@ packages:
     resolution:
       integrity: sha512-hk/69oAeaIzchq/v3lS50PXuzn5O2ynldopMC+SWBql7J2WtdptfB9dy8Y7+Og5rPkTCpn83zTiO8FMcqlXJ/g==
   /jsondiffpatch/0.4.1:
+    bundledDependencies: []
     dependencies:
       chalk: 2.4.2
       diff-match-patch: 1.0.5
@@ -26027,6 +26040,15 @@ packages:
     dev: false
     resolution:
       integrity: sha1-ODjpfPxgUh63PFJajlW/3Z4uKPE=
+  /use-clipboard-copy/0.1.2_react@16.13.1:
+    dependencies:
+      clipboard-copy: 3.1.0
+      react: 16.13.1
+    dev: false
+    peerDependencies:
+      react: ^16.8.0
+    resolution:
+      integrity: sha512-EkauxqyX+us4+Mfif/f61ew89EAOWIArqFpHR0jSG4SwwuDZzDAOeqO7gkK0vi+DQVADeB1RB3xqU3U0oOO3NQ==
   /use-composed-ref/1.0.0_react@16.13.1:
     dependencies:
       react: 16.13.1
@@ -26588,6 +26610,7 @@ packages:
       tapable: 1.1.3
       terser-webpack-plugin: 1.4.5_webpack@4.44.1
       watchpack: 1.7.4
+      webpack: 4.44.1_webpack@4.44.1
       webpack-sources: 1.4.3
     dev: false
     engines:

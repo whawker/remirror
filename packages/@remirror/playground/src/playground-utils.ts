@@ -12,7 +12,8 @@ interface GetMonacoFileName {
  *
  * @param packageName - the name being imported like `remirror/extension/bold`
  */
-export function getEditorFilePath({ packageName, relativePath, isDts }: GetMonacoFileName) {
+export function getEditorFilePath(options: GetMonacoFileName): string {
+  const { packageName, relativePath, isDts = false } = options;
   return `file:///node_modules/${isDts ? '@types/' : ''}${packageName}/${relativePath}`;
 }
 

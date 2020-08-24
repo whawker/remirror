@@ -32,6 +32,12 @@ const CodeEditor: FC<CodeEditorProps> = function (props) {
       const myEditor = editor.create(ref.current, {
         model,
         language: 'typescript',
+        fontSize: 16,
+        fontFamily: '"Fira Code", Menlo, Monaco, "Courier New", monospace',
+        fontLigatures: true,
+        minimap: {
+          enabled: false,
+        },
       });
       editorRef.current = myEditor;
 

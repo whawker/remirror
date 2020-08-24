@@ -56,6 +56,7 @@ languages.typescript.typescriptDefaults.setCompilerOptions(tsOptions);
 languages.typescript.javascriptDefaults.setCompilerOptions(tsOptions);
 
 editor.defineTheme(...darkTheme);
+editor.setTheme('darkTheme');
 
 /**
  * This method is used to add types to the monaco editor runtime.
@@ -98,7 +99,8 @@ function addDtsFiles(packageName: string, dtsFileContents: Record<string, string
   //   editor.
 
   // Get the end segment of the scoped name `@remirror/core-utils` =>
-  // `core-utils`
+  // `core-utils`. We need this to create the new sub directory import since
+  // `core-utils` => `remirror/core/utils`.
   const [, endSegment] = packageName.split('/');
 
   // Convert the filename to a sub directory path which appends the
@@ -125,7 +127,7 @@ function addDtsFiles(packageName: string, dtsFileContents: Record<string, string
  * The function that is run when the editor is first created in order to
  * populate the editor types.
  */
-export function populateEditorTypes() {
+export function populateEditorTypes(): void {
   // Loop through the prepared DTS_CACHE and add it to the list of cached
   // modules.
   for (const [packageName, dtsFileContents] of entries(DTS_CACHE)) {
