@@ -77,6 +77,7 @@ export {
   uniqueArray,
   uniqueBy,
   uniqueId,
+  unset,
   values,
   within,
 } from './core-helpers';
