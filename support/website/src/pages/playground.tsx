@@ -16,7 +16,7 @@ const PlaygroundPage = (props: any) => {
   const { siteConfig } = useDocusaurusContext();
   const { favicon, url: siteUrl } = siteConfig!;
   const defaultImage = siteConfig?.themeConfig?.image;
-  const { noFooter, description, image, keywords, permalink, version } = props;
+  const { description, image, keywords, permalink, version } = props;
   const metaImage = image || defaultImage;
   const metaImageUrl = useBaseUrl(metaImage, { absolute: true });
   const faviconUrl = useBaseUrl(favicon);
@@ -43,7 +43,7 @@ const PlaygroundPage = (props: any) => {
             {version ?? <meta name='docsearch:version' content={version} />}
             {keywords?.length ?? <meta name='keywords' content={keywords?.join(',')} />}
             {metaImage ?? <meta property='og:image' content={metaImageUrl} />}
-            {metaImage ?? <meta property='twitter:image' content={metaImageUrl} />}
+            <meta property='twitter:image' content={metaImageUrl} />
             {metaImage ?? <meta name='twitter:image:alt' content='Image for Remirror Playground' />}
             {permalink ?? <meta property='og:url' content={siteUrl + permalink} />}
             {permalink ?? <link rel='canonical' href={siteUrl + permalink} />}

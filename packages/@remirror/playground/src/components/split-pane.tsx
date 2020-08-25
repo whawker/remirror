@@ -35,9 +35,9 @@ import {
   isObject,
   isString,
   isUndefined,
-  MakeOptional,
   uniqueArray,
 } from 'remirror/core';
+import { isValidElement } from 'remirror/react/utils';
 
 const DEFAULT_PANE_SIZE = '1';
 const DEFAULT_PANE_MIN_SIZE = '0';
@@ -116,11 +116,6 @@ export const SplitPane: FC<SplitPaneProps> = (props) => {
   // State variable to keep track of the sizes for each rendered child.
   const [sizes, setSizes] = useState<string[]>(() => getPanePropSizes(props.children));
 
-  // Update the sizes on each render.
-  useEffect(() => {
-    setSizes(() => getPanePropSizes(props.children));
-  }, [props.children]);
-
   const onMove = useCallback(
     (clientX: number, clientY: number) => {
       const data = dataRef.current;
@@ -138,10 +133,10 @@ export const SplitPane: FC<SplitPaneProps> = (props) => {
         paneDimensions,
       } = dimensionsSnapshot;
 
-      const sizeDim = split === 'vertical' ? 'width' : 'height';
+      const sizeDimension = split === 'vertical' ? 'width' : 'height';
       const primary = paneDimensions[resizerIndex];
       const secondary = paneDimensions[resizerIndex + 1];
-      const maxSize = primary[sizeDim] + secondary[sizeDim];
+      const maxSize = primary[sizeDimension] + secondary[sizeDimension];
 
       const primaryMinSizePx = minSizesPx[resizerIndex];
       const secondaryMinSizePx = minSizesPx[resizerIndex + 1];
@@ -150,8 +145,8 @@ export const SplitPane: FC<SplitPaneProps> = (props) => {
 
       const moveOffset = split === 'vertical' ? startClientX - clientX : startClientY - clientY;
 
-      let primarySizePx = primary[sizeDim] - moveOffset;
-      let secondarySizePx = secondary[sizeDim] + moveOffset;
+      let primarySizePx = primary[sizeDimension] - moveOffset;
+      let secondarySizePx = secondary[sizeDimension] + moveOffset;
 
       let primaryHasReachedLimit = false;
       let secondaryHasReachedLimit = false;
@@ -173,9 +168,9 @@ export const SplitPane: FC<SplitPaneProps> = (props) => {
       }
 
       if (primaryHasReachedLimit) {
-        secondarySizePx = primary[sizeDim] + secondary[sizeDim] - primarySizePx;
+        secondarySizePx = primary[sizeDimension] + secondary[sizeDimension] - primarySizePx;
       } else if (secondaryHasReachedLimit) {
-        primarySizePx = primary[sizeDim] + secondary[sizeDim] - secondarySizePx;
+        primarySizePx = primary[sizeDimension] + secondary[sizeDimension] - secondarySizePx;
       }
 
       sizesPx[resizerIndex] = primarySizePx;
@@ -317,6 +312,11 @@ export const SplitPane: FC<SplitPaneProps> = (props) => {
       document.removeEventListener('touchend', onMouseUp);
     };
   }, [onMouseMove, onMouseUp, onTouchMove]);
+
+  // Update the sizes on each render.
+  useEffect(() => {
+    setSizes(() => getPanePropSizes(props.children));
+  }, [props.children]);
 
   const setPaneRef = useCallback((idx, el) => {
     paneElementsRef.current[idx] = el;
@@ -500,10 +500,16 @@ const Resizer: FC<ResizerProps> = (props) => {
   );
 };
 
+interface PaneProps extends Partial<PaneStyle> {
+  innerRef?: (index: number, element: HTMLElement) => void;
+  index?: number;
+  className?: string;
+}
+
 /**
  * The component which renders the pane.
  */
-const Pane: FC<PaneProps> = (props) => {
+export const Pane: FC<PaneProps> = (props) => {
   const {
     index,
     innerRef,
@@ -519,11 +525,11 @@ const Pane: FC<PaneProps> = (props) => {
 
   const setRef: RefCallback<HTMLElement> = useCallback(
     (element) => {
-      if (!element) {
+      if (!element || !isNumber(index)) {
         return;
       }
 
-      innerRef(index, element);
+      innerRef?.(index, element);
     },
     [index, innerRef],
   );
@@ -539,30 +545,16 @@ const Pane: FC<PaneProps> = (props) => {
   );
 };
 
-interface PaneProps
-  extends MakeOptional<PaneStyle, 'maxSize' | 'minSize' | 'initialSize' | 'split'> {
-  innerRef: (index: number, element: HTMLElement) => void;
-  index: number;
-  className?: string;
-}
-
 interface PaneStyle {
   split: Split;
   initialSize: number | string;
   size?: number | string;
   minSize: string | number;
   maxSize: string | number;
-  resizersSize: string | number;
+  resizersSize?: string | number;
 }
 
 type Split = 'vertical' | 'horizontal';
-
-Pane.defaultProps = {
-  initialSize: '1',
-  split: 'vertical',
-  minSize: '0',
-  maxSize: '100%',
-};
 
 /**
  * Convert a provided string and size ratio into a valid css string.
@@ -678,7 +670,7 @@ const ColumnStyle = styled.div`
   display: flex;
   height: 100%;
   flex-direction: column;
-  flex: 1px;
+  flex: 1;
   outline: none;
   overflow: hidden;
   user-select: text;
@@ -691,7 +683,7 @@ const RowStyle = styled.div`
   display: flex;
   height: 100%;
   flex-direction: row;
-  flex: 1px;
+  flex: 1;
   outline: none;
   overflow: hidden;
   user-select: text;
@@ -745,7 +737,7 @@ function isPaneElement(value: unknown): value is ReactElement<PropsWithChildren<
  */
 function getPanePropSizes(children: ReactNode) {
   return removeNullChildren(children).map((child) => {
-    invariant(isPaneElement(child), {
+    invariant(isValidElement(child), {
       message: 'Something went wrong in the Playground. This should not error.',
     });
 
@@ -797,7 +789,7 @@ function getDimensionsSnapshot(options: GetDimensionSnapshotOptions): Dimensions
  */
 function getPanePropMinMaxSize(children: ReactNode, key: 'minSize' | 'maxSize') {
   return removeNullChildren(children).map((child) => {
-    invariant(isPaneElement(child), {
+    invariant(isValidElement(child), {
       message: 'Something went wrong in the Playground. This should not error.',
     });
 
@@ -834,3 +826,8 @@ function getPaneDimensions(paneElements: HTMLElement[]) {
 function getResizersSize(children: ReactNode[], resizerSize: number) {
   return (children.length - 1) * resizerSize;
 }
+
+// export const SplitPane = styled.div`
+//   background-color: red;
+// `;
+// export const Pane = styled.div``;

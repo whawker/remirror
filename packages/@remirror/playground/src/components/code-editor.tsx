@@ -8,17 +8,21 @@
  * This code editor will be loaded asynchronously due to it's size. It will provide the editor
  */
 
-import React from 'react';
-import MonacoEditor from 'react-monaco-editor';
+import React, { FC } from 'react';
+import MonacoEditor, { MonacoEditorProps } from 'react-monaco-editor';
+
+import { usePlaygroundState } from '../playground-state';
 
 /**
  * This editor is a shallow wrapper around the monaco editor. It should be
  * loaded only when required as it requires a lot.
  */
-export const PlaygroundMonacoEditor = () => {
+export const PlaygroundCodeEditor: FC<PlaygroundCodeEditorProps> = () => {
   return (
     <div>
       <MonacoEditor width='100%' height='100%' />
     </div>
   );
 };
+
+export interface PlaygroundCodeEditorProps {}
