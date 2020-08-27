@@ -6,8 +6,7 @@ import React, { FC, useCallback, useEffect, useMemo, useRef, useState } from 're
 import { debounce } from '@remirror/core-helpers';
 import type { EditorState } from 'remirror/core';
 
-import CodeEditor from './code-editor';
-import { Divide, Main, Panel, StyledContainer } from './components';
+import { Divide, Main, Panel, PlaygroundCodeEditor, StyledContainer } from './components';
 import { PlaygroundContext, PlaygroundContextObject } from './context';
 import { ErrorBoundary } from './error-boundary';
 import { makeRequire, REQUIRED_MODULES } from './execute';
@@ -328,11 +327,7 @@ export const Playground: FC = () => {
                   position: 'relative',
                 }}
               >
-                <CodeEditor
-                  value={advanced ? value : code}
-                  onChange={setValue}
-                  readOnly={!advanced}
-                />
+                <PlaygroundCodeEditor />
                 <div style={{ position: 'absolute', bottom: '1rem', right: '2rem' }}>
                   {advanced ? (
                     <button onClick={handleToggleAdvanced}>☑️ Enter simple mode</button>

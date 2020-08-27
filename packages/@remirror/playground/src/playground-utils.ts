@@ -268,13 +268,12 @@ const DEFAULT_TIMEOUT = 100;
  * - The script should only be loaded once in the session.
  * - The promise should resolve only when the check has successfully passed.
  */
-export async function loadScript(src: string, options: LoadScriptOptions = {}) {
+export function loadScript(src: string, options: LoadScriptOptions = {}): Promise<void> {
   const {
     hasLoaded = () => true,
     maximumChecks = DEFAULT_MAX_CHECKS,
     timeout = DEFAULT_TIMEOUT,
   } = options;
-  // Set up the maximum checks before giving up.
 
   return new Promise((resolve, reject) => {
     const script = document.createElement('script');
